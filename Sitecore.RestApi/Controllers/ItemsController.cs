@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Web;
 using System.Web.Http;
@@ -14,7 +15,8 @@ namespace Sitecore.RestApi.Controllers
     {
         private ItemConverter _itemConverter;
 
-        public ItemConverter ItemConverter {
+        public ItemConverter ItemConverter
+        {
             get { return _itemConverter ?? (_itemConverter = GetItemConverter()); }
         }
 
@@ -46,13 +48,33 @@ namespace Sitecore.RestApi.Controllers
                     : ItemConverter.ConvertItems(GetItemsFromQueryName(queryName: id));
         }
 
-
         private IEnumerable<Item> GetItemsFromQueryName(string queryName)
         {
             var itemQueryRepository = new ItemQueryRepository();
             var itemQuery = itemQueryRepository.Get(queryName);
+            var query = itemQuery.Query.ToLower();
 
-            return ItemRepository.Find(itemQuery.Query);
+            Func<string, NameValueCollection, string> formatQuery =
+                (q, nv) =>
+                {
+                    if (!nv.AllKeys.Any()) return q;
+
+                    foreach (var name in nv.AllKeys)
+                    {
+                        var nameP = "{" + name.ToLower() + "}";
+                        q = q.Replace(nameP, nv[name]);
+                    }
+
+                    return q;
+                };
+
+            //replace with query param values
+            query = formatQuery(query, HttpContext.Current.Request.QueryString);
+
+            //replace with default param values
+            query = formatQuery(query, itemQuery.DefaultParams);
+
+            return ItemRepository.Find(query);
         }
     }
 
@@ -71,7 +93,7 @@ namespace Sitecore.RestApi.Controllers
         public JToken Get(string id)
         {
             var source = ItemRepository.Get(id);
-         
+
             return ItemConverter.ConvertItems(source.Axes.GetAncestors());
         }
     }
@@ -81,7 +103,7 @@ namespace Sitecore.RestApi.Controllers
         public JToken Get(string id)
         {
             var source = ItemRepository.Get(id);
-         
+
             return ItemConverter.ConvertItems(source.Axes.GetDescendants());
         }
     }

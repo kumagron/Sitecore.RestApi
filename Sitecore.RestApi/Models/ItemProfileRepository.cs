@@ -22,7 +22,7 @@ namespace Sitecore.RestApi.Models
             {
                 throw new Exception(
                     string.Format(
-                        "The item profile '{0}' with id {1} could not be found. Please check the setting value for Restful.ItemProfilesRootId.",
+                        "The item profile '{0}' could not be found.",
                         profileName, rootId));
             }
 

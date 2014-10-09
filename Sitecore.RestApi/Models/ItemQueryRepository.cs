@@ -24,7 +24,7 @@ namespace Sitecore.RestApi.Models
             {
                 throw new Exception(
                     string.Format(
-                        "The item query '{0}' with id {1} could not be found. Please check the setting value for RestfulSearch.ItemQueriesRootId.",
+                        "The item query '{0}' could not be found.",
                         queryName, rootId));
             }
 

@@ -54,25 +54,28 @@ namespace Sitecore.RestApi.Controllers
             var itemQuery = itemQueryRepository.Get(queryName);
             var query = itemQuery.Query.ToLower();
 
-            Func<string, NameValueCollection, string> formatQuery =
-                (q, nv) =>
+            Func<string, NameValueCollection, bool, string> formatQuery =
+                (q, nv, decode) =>
                 {
                     if (!nv.AllKeys.Any()) return q;
 
-                    foreach (var name in nv.AllKeys)
+                    foreach (var key in nv.AllKeys)
                     {
-                        var nameP = "{" + name.ToLower() + "}";
-                        q = q.Replace(nameP, nv[name]);
+                        var value = nv.Get(key);
+
+                        q = q.Replace(
+                                "{" + key + "}",
+                                decode ? HttpUtility.UrlDecode(value) : value);
                     }
 
                     return q;
                 };
 
             //replace with query param values
-            query = formatQuery(query, HttpContext.Current.Request.QueryString);
+            query = formatQuery(query, HttpContext.Current.Request.QueryString, true);
 
             //replace with default param values
-            query = formatQuery(query, itemQuery.DefaultParams);
+            query = formatQuery(query, itemQuery.DefaultParams, false);
 
             return ItemRepository.Find(query);
         }

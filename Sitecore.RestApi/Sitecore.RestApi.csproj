@@ -52,6 +52,10 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.2\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web.Http, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.2\lib\net45\System.Web.Http.dll</HintPath>
@@ -135,10 +139,10 @@
   <Target Name="BeforeBuild">
   </Target>
 
-
+  -->
   <Target Name="AfterBuild">
     <Copy SourceFiles="bin\Sitecore.RestApi.dll" DestinationFolder="C:\inetpub\wwwroot\SitecoreMvc\Website\bin" ContinueOnError="false" />
     <Copy SourceFiles="App_Config\Include\Sitecore.RestApi.config" DestinationFolder="C:\inetpub\wwwroot\SitecoreMvc\Website\App_Config\Include" ContinueOnError="false" />
   </Target>
-  -->
+
 </Project>

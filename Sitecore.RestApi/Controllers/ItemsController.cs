@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Web;
 using System.Web.Http;
 using Newtonsoft.Json.Linq;
@@ -34,23 +37,39 @@ namespace Sitecore.RestApi.Controllers
 
             return new ItemConverter(itemProfile);
         }
+
+        public HttpResponseMessage CreateResponse(JToken value)
+        {
+            var response = Request.CreateResponse(HttpStatusCode.OK, value);
+
+            //TODO: Make this configurable in Sitecore
+            response.Headers.CacheControl = new CacheControlHeaderValue
+            {
+                SharedMaxAge = new TimeSpan(1, 0, 0),
+                Public = true
+            };
+
+            return response;
+        }
     }
 
     public class ItemsController : ItemRestApiController
     {
-        public JToken Get(string id)
+        public HttpResponseMessage Get(string id)
         {
-            Data.ID result;
+            Data.ID idResult;
 
-            return
-                Data.ID.TryParse(id, out result)
-                    ? ItemConverter.ConvertItem(ItemRepository.Get(id: result))
+            var result =
+                Data.ID.TryParse(id, out idResult)
+                    ? ItemConverter.ConvertItem(ItemRepository.Get(id: idResult))
                     : ItemConverter.ConvertItems(GetItemsFromQueryName(queryName: id));
+
+            return CreateResponse(result);
         }
 
-        public JToken GetAll(string query)
+        public HttpResponseMessage GetAll(string query)
         {
-            return ItemConverter.ConvertItems(ItemRepository.Find(query));
+            return CreateResponse(ItemConverter.ConvertItems(ItemRepository.Find(query)));
         }
 
         private IEnumerable<Item> GetItemsFromQueryName(string queryName)
@@ -88,31 +107,31 @@ namespace Sitecore.RestApi.Controllers
 
     public class ItemChildrenController : ItemRestApiController
     {
-        public JToken Get(string id)
+        public HttpResponseMessage Get(string id)
         {
             var source = ItemRepository.Get(id);
 
-            return ItemConverter.ConvertItems(source.Children);
+            return CreateResponse(ItemConverter.ConvertItems(source.Children));
         }
     }
 
     public class ItemAncestorsController : ItemRestApiController
     {
-        public JToken Get(string id)
+        public HttpResponseMessage Get(string id)
         {
             var source = ItemRepository.Get(id);
 
-            return ItemConverter.ConvertItems(source.Axes.GetAncestors());
+            return CreateResponse(ItemConverter.ConvertItems(source.Axes.GetAncestors()));
         }
     }
 
     public class ItemDescendantsController : ItemRestApiController
     {
-        public JToken Get(string id)
+        public HttpResponseMessage Get(string id)
         {
             var source = ItemRepository.Get(id);
 
-            return ItemConverter.ConvertItems(source.Axes.GetDescendants());
+            return CreateResponse(ItemConverter.ConvertItems(source.Axes.GetDescendants()));
         }
     }
 }

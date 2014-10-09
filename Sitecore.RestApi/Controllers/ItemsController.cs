@@ -48,6 +48,11 @@ namespace Sitecore.RestApi.Controllers
                     : ItemConverter.ConvertItems(GetItemsFromQueryName(queryName: id));
         }
 
+        public JToken GetAll(string query)
+        {
+            return ItemConverter.ConvertItems(ItemRepository.Find(query));
+        }
+
         private IEnumerable<Item> GetItemsFromQueryName(string queryName)
         {
             var itemQueryRepository = new ItemQueryRepository();

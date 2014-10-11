@@ -1,14 +1,4 @@
-# Ignore Sitecore Libraries
-SitecoreLib\*.dll
-
-#Ignore obj folder
-Sitecore.RestApi\obj
-
-#Ignore bin folder
-Sitecore.RestApi\bin
-
-#Ignore solution file
-Sitecore.RestApi.v11.suo
-
-#Ignore other files
-Sitecore.RestApi\*.csproj
+**/bin
+**/obj
+**/SitecoreLib
+**/*.suo

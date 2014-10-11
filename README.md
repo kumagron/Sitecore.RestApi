@@ -1,5 +1,5 @@
 #Sitecore REST API
-This project aims to provide a completely RESTful alternative to Sitecore's Item Web API. Apart from being completely RESTful it also a lot of flexibility in customizing the response output with little effort.
+This project aims to provide a completely RESTful alternative to Sitecore's Item Web API. Apart from being completely RESTful it also provides a lot of flexibility in customizing the response output with little effort.
 
 Read below to know more about what it can do to make your Sitecore client-side development more efficient.
 

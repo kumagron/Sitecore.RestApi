@@ -13,19 +13,22 @@ namespace Sitecore.RestApi.Converters
     public class ItemConverter
     {
         private ItemProfile ItemProfile { get; set; }
-        private IEnumerable<Formatter> ValueFormatters { get; set; }
-        private Dictionary<string, Func<Item, object>> PropertyConverters { get; set; }
 
         public ItemConverter(ItemProfile itemProfile)
         {
             ItemProfile = itemProfile;
-            ValueFormatters = GetFormatters(ItemProfile.ValueFormatters);
-            PropertyConverters = new Dictionary<string, Func<Item, object>>
+            ItemProfile.ItemPropertyFormatters = new Dictionary<string, Func<Item, object>>
                                          {
-                                             {"id", PropertyConverter.ConvertId},
-                                             {"fields", ConvertItemFields},
-                                             {"kupal", PropertyConverter.ConvertKupal}
+                                             {"fields", ConvertItemFields}
                                          };
+
+            if (ItemProfile.ShowFields && ItemProfile.FieldPropertyNames.Any())
+                ItemProfile.ItemPropertyNames.Add("Fields");
+            else //make sure it doesn't get accidentally added
+            {
+                ItemProfile.ItemPropertyNames.Remove(
+                    ItemProfile.ItemPropertyNames.SingleOrDefault(n => n.Equals("Fields", StringComparison.OrdinalIgnoreCase)));
+            }
         }
 
         public JToken ConvertItems(IEnumerable<Item> source)
@@ -41,21 +44,7 @@ namespace Sitecore.RestApi.Converters
 
         public JToken ConvertItem(Item source)
         {
-            var propertyNames = ItemProfile.ItemPropertyNames.ToList();
-
-            if (ItemProfile.ShowFields && ItemProfile.FieldPropertyNames.Any())
-                propertyNames.Add("Fields");
-            else //make sure it doesn't get accidentally added
-            {
-                propertyNames.Remove(
-                    propertyNames.SingleOrDefault(n => n.Equals("Fields", StringComparison.OrdinalIgnoreCase)));
-            }
-
-            var item = GenerateJTokenAsync(source,
-                                       propertyNames,
-                                       ValueFormatters.Where(n => !(n.Source is IFieldValueFormatter)),
-                                       ConvertItemProperty,
-                                       FormatValues);
+            var item = FormatHelper.GenerateJTokenAsync(source, ItemProfile, ConvertItemProperty, FormatHelper.FormatValues);
 
             return item.Result;
         }
@@ -66,9 +55,9 @@ namespace Sitecore.RestApi.Converters
 
             var key = name.ToLower();
 
-            if (!PropertyConverters.ContainsKey(key)) return null;
+            if (!ItemProfile.ItemPropertyFormatters.ContainsKey(key)) return null;
 
-            var converter = PropertyConverters[key];
+            var converter = ItemProfile.ItemPropertyFormatters[key];
             var result = converter((Item)source);
             var jTokenResult = result as JToken;
 
@@ -84,107 +73,11 @@ namespace Sitecore.RestApi.Converters
                         where !nameIsHidden(obj.Name)
                         select obj;
 
-            var tasks = query.Select(obj => Task.FromResult(GenerateJTokenAsync(obj, ItemProfile.FieldPropertyNames, ValueFormatters, null, FormatFieldValues))).ToArray();
+            var tasks = query.Select(obj => Task.FromResult(FormatHelper.GenerateJTokenAsync(obj, ItemProfile, null, FormatHelper.FormatFieldValues))).ToArray();
 
             Task.WaitAll(tasks);
 
             return JArray.FromObject(tasks.Select(n => n.Result.Result).Where(n => n.HasValues));
-        }
-
-        private async Task<JToken> GenerateJTokenAsync(object source, IEnumerable<string> propertyNames, 
-                                        IEnumerable<Formatter> valueFormatters,
-                                        Func<object, string, dynamic> convertValueFunc,
-                                        Func<object, string, string, IEnumerable<Formatter>, dynamic> formatValueFunc)
-        {
-            var tasks = propertyNames.Select(n => 
-                Task.FromResult(
-                    PropertyConverter.Convert(source, n, ItemProfile.CamelCaseName, valueFormatters, convertValueFunc, formatValueFunc)));
-
-            var results = await Task.WhenAll(tasks);
-
-            var ret = new JObject();
-
-            foreach (var result in results)
-            {
-                var value = result.Value ?? string.Empty;
-
-                ret.Add(result.Key, (value as JToken) ?? JToken.FromObject(value));
-            }
-
-            return ret;
-        }
-
-        private static dynamic FormatValues(object source, string name, dynamic value, IEnumerable<Formatter> formatterArgs)
-        {
-            var parameters = new object[] {source, name, value};
-            var task = InvokeFormattersAsync(formatterArgs, parameters);
-
-            return task.Result;
-        }
-
-        private static dynamic FormatFieldValues(object source, string name, dynamic value,
-                                                 IEnumerable<Formatter> formatterArgs)
-        {
-            var propertyIsValue = name.Equals("value", StringComparison.OrdinalIgnoreCase);
-
-            var query = propertyIsValue
-                            ? formatterArgs.Where(n => n.Source is IFieldValueFormatter)
-                            : formatterArgs.Where(n => !(n.Source is IFieldValueFormatter));
-
-            if (!query.Any()) return value;
-
-            if (propertyIsValue)
-            {
-                var task = InvokeFormattersAsync(query, new[] {source});
-
-                return task.Result;
-            }
-
-            return FormatValues(source, name, value, query);
-        }
-
-        private static async Task<object> InvokeFormattersAsync(IEnumerable<Formatter> formatters, object[] parameters)
-        {
-            Func<Formatter, object> formatValue = formatter =>
-                                                      {
-                                                          var source = formatter.Source as ValueFormatter;
-                                                          formatter.Method.Invoke(source, parameters);
-                                                          
-                                                          return source.IsFormatted ? source.FormattedValue : null;
-                                                      };
-
-            var tasks = formatters.Select(n => Task.FromResult(formatValue(n))).ToList();
-
-            var results = await Task.WhenAll(tasks);
-
-            return results.SingleOrDefault(n => n != null);
-        }
-
-        private static IEnumerable<Formatter> GetFormatters(IEnumerable<Type> valueFormaters)
-        {
-            var formatValueParams = typeof(IValueFormatter).GetMethod("FormatValue").GetParameters();
-
-            var query = valueFormaters.Select(n =>
-            {
-                var obj = Activator.CreateInstance(n);
-                var method =
-                    n.GetMethods()
-                     .SingleOrDefault(
-                         m =>
-                         m.Name.Equals("FormatValue",
-                                       StringComparison.OrdinalIgnoreCase) ||
-                         formatValueParams.Equals(m.GetParameters()));
-
-                if (method == null) return null;
-
-                return new Formatter
-                {
-                    Source = obj,
-                    Method = method
-                };
-            }).Where(n => n != null);
-
-            return query;
         }
     }
 }

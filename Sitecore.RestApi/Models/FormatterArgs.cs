@@ -2,7 +2,7 @@
 
 namespace Sitecore.RestApi.Models
 {
-    public class Formatter: System.EventArgs
+    public class FormatterArgs: System.EventArgs
     {
         public object Source { get; set; }
         public MethodInfo Method { get; set; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Sitecore.RestApi.Helpers;
 
 namespace Sitecore.RestApi.Models
 {
@@ -10,7 +11,12 @@ namespace Sitecore.RestApi.Models
 
         public GenericRepository()
         {
-            var site = Sitecore.Configuration.Factory.GetSite("website");
+            var siteName = SettingsHelper.GetSiteConfigName();
+            var site = Sitecore.Configuration.Factory.GetSite(siteName);
+
+            if (site == null)
+                throw new Exception(string.Format("Site configuration for '{0}' could not be found!", siteName));
+
             Db = Sitecore.Data.Database.GetDatabase(site.Database.Name);
         }
     }

@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
+using System.Xml;
+using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
 using Sitecore.Data.Items;
+using Sitecore.RestApi.Content;
+using Sitecore.RestApi.Converters;
 using Sitecore.RestApi.Helpers;
 using Sitecore.RestApi.Models;
 
@@ -40,7 +46,19 @@ namespace Sitecore.RestApi.Controllers
 
         public HttpResponseMessage CreateResponse(JToken value)
         {
-            var response = Request.CreateResponse(HttpStatusCode.OK, value);
+            HttpResponseMessage response;
+            var contentType = HttpContext.Current.Request.ContentType.ToLower();
+            
+            if (XmlContent.XmlContentTypes.Contains(contentType))
+            {
+                value = JToken.FromObject(new { result = new { item = value } });
+                var xml = Newtonsoft.Json.JsonConvert.DeserializeXmlNode(value.ToString());
+                response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new XmlContent(xml, contentType) };
+            }
+            else
+            {
+                response = Request.CreateResponse(HttpStatusCode.OK, value, new MediaTypeHeaderValue("application/json"));
+            }
 
             //TODO: Make this configurable in Sitecore
             response.Headers.CacheControl = new CacheControlHeaderValue

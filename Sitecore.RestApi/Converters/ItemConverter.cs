@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using Sitecore.Data.Fields;
 using Sitecore.RestApi.Formatters;
+using Sitecore.RestApi.Helpers;
 using Sitecore.RestApi.Models;
 using Newtonsoft.Json.Linq;
 using Sitecore.Data.Items;
 
-namespace Sitecore.RestApi.Helpers
+namespace Sitecore.RestApi.Converters
 {
     public class ItemConverter
     {

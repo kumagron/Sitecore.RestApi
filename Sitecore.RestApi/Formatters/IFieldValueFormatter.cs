@@ -2,8 +2,8 @@
 
 namespace Sitecore.RestApi.Formatters
 {
-    public interface IFieldValueFormatter
+    public interface IFieldValueFormatter : IValueFormatter
     {
-        void FormatValue(Field source); 
+        //void FormatValue(Field source); 
     }
 }

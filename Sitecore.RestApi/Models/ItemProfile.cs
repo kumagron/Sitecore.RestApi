@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Sitecore.Data.Items;
 
 namespace Sitecore.RestApi.Models
 {
@@ -7,11 +8,12 @@ namespace Sitecore.RestApi.Models
     {
         public string Name { get; set; }
        
-        public IEnumerable<string> ItemPropertyNames { get; set; }
-        public IEnumerable<string> FieldPropertyNames { get; set; }
-        public IEnumerable<string> HiddenFieldNames { get; set; }
+        public IList<string> ItemPropertyNames { get; set; }
+        public IList<string> FieldPropertyNames { get; set; }
+        public IList<string> HiddenFieldNames { get; set; }
         public bool ShowFields { get; set; }
         public bool CamelCaseName { get; set; }
-        public IEnumerable<Type> ValueFormatters { get; set; }
+        public IList<FormatterArgs> ValueFormatters { get; set; }
+        public IDictionary<string, Func<Item, object>> ItemPropertyFormatters { get; set; }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Sitecore.Data.Fields;
+using Sitecore.Data.Items;
+using Sitecore.RestApi.Formatters;
 using Sitecore.RestApi.Helpers;
 
 namespace Sitecore.RestApi.Models
@@ -33,18 +36,22 @@ namespace Sitecore.RestApi.Models
             var forceCamelCase = new CheckboxField(item.Fields["CamelCase Name"]);
             var valueFormatters = new MultilistField(item.Fields["Value Formatters"]);
 
+
+
             var itemProfile = new ItemProfile
                                     {
                                         Name = item["Name"],
-                                        ItemPropertyNames = itemProperties.GetItems().Select(n => n["Name"]),
-                                        FieldPropertyNames = fieldProperties.GetItems().Select(n => n["Name"]),
-                                        HiddenFieldNames = hiddenFields.GetItems().Select(n => n["Name"]),
+                                        ItemPropertyNames = itemProperties.GetItems().Select(n => n["Name"]).ToList(),
+                                        FieldPropertyNames = fieldProperties.GetItems().Select(n => n["Name"]).ToList(),
+                                        HiddenFieldNames = hiddenFields.GetItems().Select(n => n["Name"]).ToList(),
                                         ShowFields = showFields.Checked,
                                         CamelCaseName = forceCamelCase.Checked,
-                                        ValueFormatters = valueFormatters.GetItems().Select(n => System.Type.GetType(n["Type"])).Where(n => n != null)
+                                        ValueFormatters = FormatHelper.GetFormatters(valueFormatters.GetItems()).ToList()
                                     };
 
             return itemProfile;
         }
+
+        
     }
 }

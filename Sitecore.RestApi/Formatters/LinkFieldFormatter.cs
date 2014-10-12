@@ -11,25 +11,25 @@ using Sitecore.Links;
 
 namespace Sitecore.RestApi.Formatters
 {
-    public class LinkFieldFormatter : ValueFormatter, IFieldValueFormatter
+    public class LinkFieldFormatter : Formatter, IFieldValueFormatter
     {
-        public void FormatValue(Field field)
+        public void FormatValue(object source, PropertyInfo property)
         {
-            var linkField = new LinkField(field);
+            //var linkField = new LinkField(field);
 
-            if (string.IsNullOrEmpty(linkField.Url) && linkField.TargetID.IsNull) return;
+            //if (string.IsNullOrEmpty(linkField.Url) && linkField.TargetID.IsNull) return;
 
-            var linkUrl = linkField.TargetItem != null ? LinkManager.GetItemUrl(linkField.TargetItem) : linkField.Url;
+            //var linkUrl = linkField.TargetItem != null ? LinkManager.GetItemUrl(linkField.TargetItem) : linkField.Url;
 
-            var value = new
-                       {
-                           text = linkField.Text, 
-                           url = linkUrl,
-                           anchor = linkField.Anchor,
-                           target = linkField.Target
-                       };
+            //var value = new
+            //           {
+            //               text = linkField.Text, 
+            //               url = linkUrl,
+            //               anchor = linkField.Anchor,
+            //               target = linkField.Target
+            //           };
 
-            SetValue(value);
+            //Set(value);
         }
     }
 }

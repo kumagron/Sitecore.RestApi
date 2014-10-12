@@ -75,23 +75,28 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Formatters\ValueFormatter.cs" />
+    <Compile Include="Formatters\IPropertyFormatter.cs" />
+    <Compile Include="Formatters\Formatter.cs" />
+    <Compile Include="Formatters\Property\FieldsFormatter.cs" />
+    <Compile Include="Formatters\Property\IdFormatter.cs" />
+    <Compile Include="Helpers\FormatHelper.cs" />
     <Compile Include="Helpers\SettingsHelper.cs" />
     <Compile Include="Content\XmlContent.cs" />
-    <Compile Include="Models\Formatter.cs" />
+    <Compile Include="Models\FormatterArgs.cs" />
     <Compile Include="Converters\ItemConverter.cs" />
     <Compile Include="Controllers\ItemsController.cs" />
     <Compile Include="Formatters\BooleanFormatter.cs" />
     <Compile Include="Formatters\DateFieldFormatter.cs" />
     <Compile Include="Formatters\IFieldValueFormatter.cs" />
     <Compile Include="Formatters\IValueFomatter.cs" />
-    <Compile Include="Converters\PropertyConverter.cs" />
+    <Compile Include="Converters\ItemPropertyConverter.cs" />
     <Compile Include="Models\ItemQuery.cs" />
     <Compile Include="Models\ItemQueryRepository.cs" />
     <Compile Include="Models\ItemRepository.cs" />
     <Compile Include="Models\ItemProfile.cs" />
     <Compile Include="Models\ItemProfileRepository.cs" />
     <Compile Include="Formatters\LinkFieldFormatter.cs" />
+    <Compile Include="Models\PropertyArgs.cs" />
     <Compile Include="Pipelines\AbortSitecoreForKnownRoutes.cs" />
     <Compile Include="Pipelines\RegisterWebApiRoute.cs" />
     <Compile Include="Pipelines\TransferRoutedRequest.cs" />

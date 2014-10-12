@@ -63,8 +63,8 @@ http://localhost/api/items/[GUID]/descendants
 * Lucene search
 
 ##How to install
-Although this project is already fully functional an installer is till on its way and to compensate for that I've included the serialized templates and items that you can already use.
+Although this project is already fully functional an installer is still on its way and to compensate for that I've included the serialized templates and items that you can already use.
 
-After deserialization build the project and deploy the Sitecore.RestApi.dll file to your site's bin folder and Sitecore.RestApi.config file to your sites Include folder.
+After deserialization build the project and deploy the Sitecore.RestApi.dll file to your site's bin folder and Sitecore.RestApi.config file to your site's Include folder.
 
-Be aware that I've used the latest Sitecore build for this project (7.2 build 140526) and I haven't tested it with earlier versions.
+Be aware that I've used the latest Sitecore build for this project (7.2 build 140526) and I haven't tested it on earlier versions.

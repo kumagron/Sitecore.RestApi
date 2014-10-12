@@ -57,6 +57,9 @@ Getting the item's descendants:
 ```
 http://localhost/api/items/[GUID]/descendants
 ```
+##Content Types
+By default the REST API will return JSON but you can also force it to return an xml by setting the header content-type to either application/xml or text/xml. 
+
 ##Upcoming Features
 * Token Authentication
 * Item property formatting
@@ -65,6 +68,20 @@ http://localhost/api/items/[GUID]/descendants
 ##How to install
 Although this project is already fully functional an installer is still on its way and to compensate for that I've included the serialized templates and items that you can already use.
 
-After deserialization build the project and deploy the Sitecore.RestApi.dll file to your site's bin folder and Sitecore.RestApi.config file to your site's Include folder.
+After deserialization build the project and copy the Sitecore.RestApi.dll and Newtonsoft.Json.dll files to your site's bin folder, and Sitecore.RestApi.config file to your site's Include folder.
 
+You can also create a Local.targets file alongside the project file to copy these files after build and it will be imported automatically to your build targets.
+```
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LocalSiteRoot>[Full path to your site]</LocalSiteRoot>
+  </PropertyGroup>
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="bin\Sitecore.RestApi.dll" DestinationFolder="$(LocalSiteRoot)\bin" ContinueOnError="false" />
+    <Copy SourceFiles="bin\Newtonsoft.Json.dll" DestinationFolder="$(LocalSiteRoot)\bin" ContinueOnError="false" />
+    <Copy SourceFiles="App_Config\Include\Sitecore.RestApi.config" DestinationFolder="$(LocalSiteRoot)\App_Config\Include" ContinueOnError="false" />
+  </Target>
+</Project>
+```
 Be aware that I've used the latest Sitecore build for this project (7.2 build 140526) and I haven't tested it on earlier versions.

@@ -2,3 +2,5 @@
 **/obj
 **/SitecoreLib/*.dll
 **/*.suo
+**/*.targets
+**/*.user

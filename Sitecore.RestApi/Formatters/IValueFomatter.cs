@@ -9,7 +9,7 @@ namespace Sitecore.RestApi.Formatters
 {
     public interface IValueFormatter
     {
-        void FormatValue(PropertyArgs propertyArgs);
-        //void FormatValue(object source, PropertyInfo property);
+        void Format(PropertyArgs propertyArgs);
+        //void Format(object source, PropertyInfo property);
     }
 }

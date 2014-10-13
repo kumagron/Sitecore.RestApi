@@ -125,7 +125,7 @@ namespace Sitecore.RestApi.Helpers
             return results.SingleOrDefault(n => n != null);
         }
 
-        public static IEnumerable<FormatterArgs> GetFormatters(IEnumerable<Item> valueFormatterItems)
+        public static IEnumerable<FormatterArgs> GetValueFormatters(IEnumerable<Item> valueFormatterItems)
         {
             var valueFormaters = valueFormatterItems.Select(n => Type.GetType(n["Type"])).Where(n => n != null);
             Func<ParameterInfo, bool> isPropertyArgs = info => typeof(PropertyArgs).IsAssignableFrom(info.ParameterType);

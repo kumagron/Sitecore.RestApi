@@ -71,9 +71,9 @@ namespace Sitecore.RestApi.Converters
 
         public JToken ConvertItem(Item source)
         {
-            var item = FormatHelper.GenerateJTokenAsync(source, ItemProfile);
+            var item = new FormatHelper(ItemProfile).FormatObjectAsync(source);
 
-            return item.Result;
+            return JToken.FromObject(item.Result);
         }
     }
 }

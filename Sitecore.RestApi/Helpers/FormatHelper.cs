@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json.Linq;
+using Sitecore.Data.Fields;
 using Sitecore.Data.Items;
 using Sitecore.RestApi.Converters;
 using Sitecore.RestApi.Formatters;
@@ -14,68 +15,66 @@ namespace Sitecore.RestApi.Helpers
 {
     public class FormatHelper
     {
-        public static async Task<JToken> GenerateJTokenAsync(object source, ItemProfile profile)
+        private ItemProfile ItemProfile { get; set; }
+
+        public FormatHelper(ItemProfile profile)
         {
-            var propertyNames = source is Item ? profile.ItemPropertyNames : profile.FieldPropertyNames;
-            var type = source.GetType();
-            var tasks = propertyNames.Select(n =>
-                Task.FromResult(
-                    FormatProperty(
-                        new PropertyArgs { 
-                            Name = n, 
-                            Info = type.GetProperty(n, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance),
-                            Source = source
-                        }, profile)));
-
-            var results = await Task.WhenAll(tasks);
-
-            var ret = new JObject();
-
-            foreach (var result in results)
-            {
-                var value = result.Value ?? String.Empty;
-
-                ret.Add(result.Key, (value as JToken) ?? JToken.FromObject(value));
-            }
-
-            return ret;
+            ItemProfile = profile;
         }
 
-        private static KeyValuePair<string, object> FormatProperty(PropertyArgs propertyArgs, ItemProfile profile)
+        public async Task<object> FormatObjectAsync(object source)
+        {
+            var propertyNames = source is Item ? ItemProfile.ItemPropertyNames : ItemProfile.FieldPropertyNames;
+            var type = source.GetType();
+            var tasks = propertyNames.Select(
+                name => 
+                    Task.FromResult(
+                        FormatProperty(
+                            new PropertyArgs
+                                {
+                                    Name = name, 
+                                    Info = type.GetProperty(name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance), 
+                                    Source = source
+                                }))).ToList();
+
+            var result = await Task.WhenAll(tasks);
+
+            return result.ToDictionary(n => n.Key, n => n.Value);
+        }
+
+        private KeyValuePair<string, object> FormatProperty(PropertyArgs propertyArgs)
         {
             var source = propertyArgs.Source;
-            var valueFormatters = source is Item
-                                      ? profile.ValueFormatters.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)))
-                                      : profile.ValueFormatters;
-            var formattedProperty =
-                source is Item
-                    ? FormatItemProperty(propertyArgs, profile)
-                    : null;
-
             var propertyName = propertyArgs.Name;
-            var name = profile.CamelCaseName ? CamelCaseName(propertyName) : propertyName;
-            var value = propertyArgs.Info != null ? (propertyArgs.GetValue() ?? string.Empty) : string.Empty;
-            
-            var result =
-                formattedProperty ??
-                ((source is Item ? FormatValues(propertyArgs, valueFormatters).Result : FormatFieldValues(propertyArgs, valueFormatters).Result) ??
-                 value);
+            var name = ItemProfile.CamelCaseName ? CamelCaseName(propertyName) : propertyName;
+
+            //Try property formatting if available
+            if (source is Item && ItemProfile.PropertyFormatters.ContainsKey(name.ToLower()))
+            {
+                var prop = InvokeFormatter(ItemProfile.PropertyFormatters[name.ToLower()], propertyArgs);
+
+                if (prop != null)
+                {
+                    return new KeyValuePair<string, object>(name, prop);
+                }
+            }
+
+            var valueFormatters = GetValueFormatters(source);
+            var propValue = propertyArgs.Info != null ? (propertyArgs.GetValue() ?? string.Empty) : string.Empty;
+
+            var result = FormatValue(propertyArgs, valueFormatters).Result ?? propValue;
 
             return new KeyValuePair<string, object>(name, result);
         }
 
-        private static JToken FormatItemProperty(PropertyArgs propertyArgs, ItemProfile profile)
+        private IEnumerable<FormatterArgs> GetValueFormatters(object source)
         {
-            if (!(propertyArgs.Source is Item)) return null;
+            var valueFormatters =
+                source is Item
+                    ? ItemProfile.ValueFormatters.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)))
+                    : ItemProfile.ValueFormatters;
 
-            var key = propertyArgs.Name.ToLower();
-
-            if (!profile.PropertyFormatters.ContainsKey(key)) return null;
-
-            var formatter = profile.PropertyFormatters[key];
-            var result = InvokeFormatter(formatter, propertyArgs);
-
-            return result as JToken ?? JToken.FromObject(result);
+            return valueFormatters;
         }
 
         private static string CamelCaseName(string originalName)
@@ -84,36 +83,21 @@ namespace Sitecore.RestApi.Helpers
             return n.Substring(0, 1).ToLower() + n.Substring(1, n.Length - 1);
         }
 
-        private static async Task<dynamic> FormatValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
+        private static async Task<object> FormatValue(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
         {
-            var task = await InvokeFormattersAsync(propertyArgs, formatterArgs);
-
-            return task;
-        }
-
-        private static async Task<dynamic> FormatFieldValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
-        {
-            var propertyIsValue = propertyArgs.Name.Equals("value", StringComparison.OrdinalIgnoreCase);
-            var query = propertyIsValue
-                            ? formatterArgs.Where(n => typeof(IFieldValueFormatter).IsAssignableFrom(n.Type))
-                            : formatterArgs.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)));
-
-            if (!query.Any()) return propertyArgs.GetValue();
-
-            if (propertyIsValue)
+            if (propertyArgs.Source is Field && propertyArgs.Name.Equals("value", StringComparison.OrdinalIgnoreCase))
             {
-                var task = await InvokeFormattersAsync(propertyArgs, query);
-                
-                return task;
+                var fvQuery = formatterArgs.Where(n => typeof (IFieldValueFormatter).IsAssignableFrom(n.Type));
+                return await InvokeFormattersAsync(propertyArgs, fvQuery);
             }
 
-            return FormatValues(propertyArgs, query);
+            var query = formatterArgs.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)));
+            return await InvokeFormattersAsync(propertyArgs, query);
         }
 
         private static async Task<object> InvokeFormattersAsync(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatters)
         {
             var tasks = formatters.Select(n => Task.FromResult(InvokeFormatter(n, propertyArgs))).ToList();
-
             var results = await Task.WhenAll(tasks);
 
             return results.SingleOrDefault(n => n != null);

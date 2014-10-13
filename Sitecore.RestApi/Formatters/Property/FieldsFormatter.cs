@@ -31,11 +31,11 @@ namespace Sitecore.RestApi.Formatters.Property
                         where !nameIsHidden(obj.Name)
                         select obj;
 
-            var tasks = query.Select(obj => Task.FromResult(FormatHelper.GenerateJTokenAsync(obj, ItemProfile))).ToArray();
+            var tasks = query.Select(obj => Task.FromResult(new FormatHelper(ItemProfile).FormatObjectAsync(obj))).ToArray();
 
             Task.WaitAll(tasks);
 
-            var result = tasks.Select(n => n.Result.Result).Where(n => n.HasValues);
+            var result = tasks.Select(n => n.Result.Result); //.Where(n => n.HasValues);
 
             Set(result);
         }

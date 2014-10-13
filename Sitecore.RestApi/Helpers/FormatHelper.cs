@@ -15,16 +15,21 @@ namespace Sitecore.RestApi.Helpers
 {
     public class FormatHelper
     {
-        private ItemProfile ItemProfile { get; set; }
+        private readonly ItemProfile _profile;
 
         public FormatHelper(ItemProfile profile)
         {
-            ItemProfile = profile;
+            _profile = profile;
         }
 
-        public async Task<object> FormatObjectAsync(object source)
+        /// <summary>
+        /// Returns a dictionary of the given object properties formatted by the available processors.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public async Task<Dictionary<string, object>> FormatObjectAsync(object source)
         {
-            var propertyNames = source is Item ? ItemProfile.ItemPropertyNames : ItemProfile.FieldPropertyNames;
+            var propertyNames = source is Item ? _profile.ItemPropertyNames : _profile.FieldPropertyNames;
             var type = source.GetType();
             var tasks = propertyNames.Select(
                 name => 
@@ -46,12 +51,12 @@ namespace Sitecore.RestApi.Helpers
         {
             var source = propertyArgs.Source;
             var propertyName = propertyArgs.Name;
-            var name = ItemProfile.CamelCaseName ? CamelCaseName(propertyName) : propertyName;
+            var name = _profile.CamelCaseName ? CamelCaseName(propertyName) : propertyName;
 
-            //Try property formatting if available
-            if (source is Item && ItemProfile.PropertyFormatters.ContainsKey(name.ToLower()))
+            // Return property formatting if available
+            if (source is Item && _profile.PropertyFormatters.ContainsKey(name.ToLower()))
             {
-                var prop = InvokeFormatter(ItemProfile.PropertyFormatters[name.ToLower()], propertyArgs);
+                var prop = InvokeFormatter(_profile.PropertyFormatters[name.ToLower()], propertyArgs);
 
                 if (prop != null)
                 {
@@ -59,6 +64,7 @@ namespace Sitecore.RestApi.Helpers
                 }
             }
 
+            // Otherwise proceed with property value formatting
             var valueFormatters = GetValueFormatters(source);
             var propValue = propertyArgs.Info != null ? (propertyArgs.GetValue() ?? string.Empty) : string.Empty;
 
@@ -71,8 +77,8 @@ namespace Sitecore.RestApi.Helpers
         {
             var valueFormatters =
                 source is Item
-                    ? ItemProfile.ValueFormatters.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)))
-                    : ItemProfile.ValueFormatters;
+                    ? _profile.ValueFormatters.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)))
+                    : _profile.ValueFormatters;
 
             return valueFormatters;
         }
@@ -85,12 +91,14 @@ namespace Sitecore.RestApi.Helpers
 
         private static async Task<object> FormatValue(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
         {
+            // Check if property corresponds to the Field value and invoke field value formatters if available.
             if (propertyArgs.Source is Field && propertyArgs.Name.Equals("value", StringComparison.OrdinalIgnoreCase))
             {
                 var fvQuery = formatterArgs.Where(n => typeof (IFieldValueFormatter).IsAssignableFrom(n.Type));
                 return await InvokeFormattersAsync(propertyArgs, fvQuery);
             }
 
+            // Otherwise invoke all non field value formatters.
             var query = formatterArgs.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)));
             return await InvokeFormattersAsync(propertyArgs, query);
         }
@@ -100,6 +108,7 @@ namespace Sitecore.RestApi.Helpers
             var tasks = formatters.Select(n => Task.FromResult(InvokeFormatter(n, propertyArgs))).ToList();
             var results = await Task.WhenAll(tasks);
 
+            // Although all available formatters are being invoked only one (or none) will be valid for the given property.
             return results.SingleOrDefault(n => n != null);
         }
 
@@ -113,6 +122,11 @@ namespace Sitecore.RestApi.Helpers
             return formatterSource.IsFormatted ? formatterSource.FormattedObject : null;
         }
 
+        /// <summary>
+        /// Returns a collection of FormatterArgs created from valid processor types.
+        /// </summary>
+        /// <param name="valueFormatterItems"></param>
+        /// <returns></returns>
         public static IEnumerable<FormatterArgs> GetFormatters(IEnumerable<Item> valueFormatterItems)
         {
             var valueFormaters = valueFormatterItems.Select(n => Type.GetType(n["Type"])).Where(n => n != null);
@@ -120,7 +134,6 @@ namespace Sitecore.RestApi.Helpers
             
             var query = valueFormaters.Select(n =>
             {
-                var obj = Activator.CreateInstance(n);
                 var method =
                     n.GetMethods()
                      .SingleOrDefault(m => m.GetParameters().SingleOrDefault(isPropertyArgs) != null);

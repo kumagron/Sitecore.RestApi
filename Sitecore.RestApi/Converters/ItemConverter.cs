@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
+using Sitecore.RestApi.Content;
 using Sitecore.RestApi.Formatters;
 using Sitecore.RestApi.Formatters.Property;
 using Sitecore.RestApi.Helpers;
@@ -72,8 +74,21 @@ namespace Sitecore.RestApi.Converters
         public JToken ConvertItem(Item source)
         {
             var item = new FormatHelper(ItemProfile).FormatObjectAsync(source);
+            var result = item.Result;
 
-            return JToken.FromObject(item.Result);
+            // This will force the xml serializer to place the field items under a fields node.
+            var contentType = HttpContext.Current.Request.ContentType.ToLower();
+            if (XmlContent.XmlContentTypes.Contains(contentType))
+            {
+                var fieldsKey = ItemProfile.CamelCaseName ? "fields" : "Fields";
+
+                result[fieldsKey] = 
+                    ItemProfile.CamelCaseName 
+                    ? (object) new { field = result[fieldsKey] }
+                    : new { Field = result[fieldsKey] };
+            }
+
+            return JToken.FromObject(result);
         }
     }
 }

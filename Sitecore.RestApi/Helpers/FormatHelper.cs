@@ -45,20 +45,23 @@ namespace Sitecore.RestApi.Helpers
         {
             var source = propertyArgs.Source;
             var valueFormatters = source is Item
-                                      ? profile.ValueFormatters.Where(n => !(n.Source is IFieldValueFormatter))
+                                      ? profile.ValueFormatters.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)))
                                       : profile.ValueFormatters;
-            var convertedValue = FormatItemProperty(propertyArgs, profile);
+            var formattedProperty =
+                source is Item
+                    ? FormatItemProperty(propertyArgs, profile)
+                    : null;
 
             var propertyName = propertyArgs.Name;
             var name = profile.CamelCaseName ? CamelCaseName(propertyName) : propertyName;
             var value = propertyArgs.Info != null ? (propertyArgs.GetValue() ?? string.Empty) : string.Empty;
             
-            var properValue =
-                convertedValue ??
-                ((source is Item ? FormatValues(propertyArgs, valueFormatters) : FormatFieldValues(propertyArgs, valueFormatters)) ??
+            var result =
+                formattedProperty ??
+                ((source is Item ? FormatValues(propertyArgs, valueFormatters).Result : FormatFieldValues(propertyArgs, valueFormatters).Result) ??
                  value);
 
-            return new KeyValuePair<string, object>(name, properValue);
+            return new KeyValuePair<string, object>(name, result);
         }
 
         private static JToken FormatItemProperty(PropertyArgs propertyArgs, ItemProfile profile)
@@ -67,13 +70,12 @@ namespace Sitecore.RestApi.Helpers
 
             var key = propertyArgs.Name.ToLower();
 
-            if (!profile.ItemPropertyFormatters.ContainsKey(key)) return null;
+            if (!profile.PropertyFormatters.ContainsKey(key)) return null;
 
-            var converter = profile.ItemPropertyFormatters[key];
-            var result = converter((Item)propertyArgs.Source);
-            var jTokenResult = result as JToken;
+            var formatter = profile.PropertyFormatters[key];
+            var result = InvokeFormatter(formatter, propertyArgs);
 
-            return jTokenResult ?? JToken.FromObject(result);
+            return result as JToken ?? JToken.FromObject(result);
         }
 
         private static string CamelCaseName(string originalName)
@@ -82,27 +84,27 @@ namespace Sitecore.RestApi.Helpers
             return n.Substring(0, 1).ToLower() + n.Substring(1, n.Length - 1);
         }
 
-        private static dynamic FormatValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
+        private static async Task<dynamic> FormatValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
         {
-            var task = InvokeFormattersAsync(propertyArgs, formatterArgs);
+            var task = await InvokeFormattersAsync(propertyArgs, formatterArgs);
 
-            return task.Result;
+            return task;
         }
 
-        private static dynamic FormatFieldValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
+        private static async Task<dynamic> FormatFieldValues(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatterArgs)
         {
             var propertyIsValue = propertyArgs.Name.Equals("value", StringComparison.OrdinalIgnoreCase);
             var query = propertyIsValue
-                            ? formatterArgs.Where(n => n.Source is IFieldValueFormatter)
-                            : formatterArgs.Where(n => !(n.Source is IFieldValueFormatter));
+                            ? formatterArgs.Where(n => typeof(IFieldValueFormatter).IsAssignableFrom(n.Type))
+                            : formatterArgs.Where(n => !(typeof(IFieldValueFormatter).IsAssignableFrom(n.Type)));
 
             if (!query.Any()) return propertyArgs.GetValue();
 
             if (propertyIsValue)
             {
-                var task = InvokeFormattersAsync(propertyArgs, query);
-
-                return task.Result;
+                var task = await InvokeFormattersAsync(propertyArgs, query);
+                
+                return task;
             }
 
             return FormatValues(propertyArgs, query);
@@ -110,22 +112,24 @@ namespace Sitecore.RestApi.Helpers
 
         private static async Task<object> InvokeFormattersAsync(PropertyArgs propertyArgs, IEnumerable<FormatterArgs> formatters)
         {
-            Func<FormatterArgs, object> formatValue = formatter =>
-            {
-                var source = Activator.CreateInstance(formatter.Source.GetType()) as Formatter;
-                formatter.Method.Invoke(source, new object[] {propertyArgs});
-
-                return source.IsFormatted ? source.FormattedObject : null;
-            };
-
-            var tasks = formatters.Select(n => Task.FromResult(formatValue(n))).ToList();
+            var tasks = formatters.Select(n => Task.FromResult(InvokeFormatter(n, propertyArgs))).ToList();
 
             var results = await Task.WhenAll(tasks);
 
             return results.SingleOrDefault(n => n != null);
         }
 
-        public static IEnumerable<FormatterArgs> GetValueFormatters(IEnumerable<Item> valueFormatterItems)
+        private static object InvokeFormatter(FormatterArgs formatterArgs, PropertyArgs propertyArgs)
+        {
+            var source = Activator.CreateInstance(formatterArgs.Type);
+            formatterArgs.Method.Invoke(source, new object[] {propertyArgs});
+
+            var formatterSource = source as Formatter;
+
+            return formatterSource.IsFormatted ? formatterSource.FormattedObject : null;
+        }
+
+        public static IEnumerable<FormatterArgs> GetFormatters(IEnumerable<Item> valueFormatterItems)
         {
             var valueFormaters = valueFormatterItems.Select(n => Type.GetType(n["Type"])).Where(n => n != null);
             Func<ParameterInfo, bool> isPropertyArgs = info => typeof(PropertyArgs).IsAssignableFrom(info.ParameterType);
@@ -141,7 +145,7 @@ namespace Sitecore.RestApi.Helpers
 
                 return new FormatterArgs
                 {
-                    Source = obj,
+                    Type = n,
                     Method = method
                 };
             }).Where(n => n != null);

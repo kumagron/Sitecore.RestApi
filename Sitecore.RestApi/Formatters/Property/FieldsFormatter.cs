@@ -14,9 +14,11 @@ namespace Sitecore.RestApi.Formatters.Property
     {
         private ItemProfile ItemProfile { get; set; }
 
-        public FieldsFormatter(ItemProfile profile)
+        public FieldsFormatter()
         {
-            ItemProfile = profile;
+            var context = HttpContext.Current.Request;
+            var profileName = context.QueryString["profile"];
+            ItemProfile = new ItemProfileRepository().Get(!string.IsNullOrEmpty(profileName) ? profileName : "default");
         }
 
         public void Format(PropertyArgs propertyArgs)
@@ -33,7 +35,7 @@ namespace Sitecore.RestApi.Formatters.Property
 
             Task.WaitAll(tasks);
 
-            var result = JArray.FromObject(tasks.Select(n => n.Result.Result).Where(n => n.HasValues));
+            var result = tasks.Select(n => n.Result.Result).Where(n => n.HasValues);
 
             Set(result);
         }

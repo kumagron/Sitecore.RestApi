@@ -11,7 +11,7 @@ namespace Sitecore.RestApi.Formatters
 
         public bool IsFormatted { get; private set; }
 
-        public void Set(object value)
+        public virtual void Set(object value)
         {
             if (value == null || (FormattedObject != null && FormattedObject.Equals(value))) return;
 

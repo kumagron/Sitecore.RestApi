@@ -14,6 +14,7 @@ namespace Sitecore.RestApi.Models
         public bool ShowFields { get; set; }
         public bool CamelCaseName { get; set; }
         public IList<FormatterArgs> ValueFormatters { get; set; }
+        public IDictionary<string, FormatterArgs> PropertyFormatters { get; set; }
         public IDictionary<string, Func<Item, object>> ItemPropertyFormatters { get; set; }
     }
 }

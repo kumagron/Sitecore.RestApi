@@ -44,24 +44,9 @@ namespace Sitecore.RestApi.Converters
 
         public JToken ConvertItem(Item source)
         {
-            var item = FormatHelper.GenerateJTokenAsync(source, ItemProfile, ConvertItemProperty, FormatHelper.FormatValues);
+            var item = FormatHelper.GenerateJTokenAsync(source, ItemProfile);
 
             return item.Result;
-        }
-
-        private JToken ConvertItemProperty(object source, string name)
-        {
-            if (!(source is Item)) return null;
-
-            var key = name.ToLower();
-
-            if (!ItemProfile.ItemPropertyFormatters.ContainsKey(key)) return null;
-
-            var converter = ItemProfile.ItemPropertyFormatters[key];
-            var result = converter((Item)source);
-            var jTokenResult = result as JToken;
-
-            return jTokenResult ?? JToken.FromObject(result);
         }
 
         public JToken ConvertItemFields(Item item)
@@ -73,7 +58,7 @@ namespace Sitecore.RestApi.Converters
                         where !nameIsHidden(obj.Name)
                         select obj;
 
-            var tasks = query.Select(obj => Task.FromResult(FormatHelper.GenerateJTokenAsync(obj, ItemProfile, null, FormatHelper.FormatFieldValues))).ToArray();
+            var tasks = query.Select(obj => Task.FromResult(FormatHelper.GenerateJTokenAsync(obj, ItemProfile))).ToArray();
 
             Task.WaitAll(tasks);
 

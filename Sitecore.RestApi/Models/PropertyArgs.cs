@@ -9,6 +9,12 @@ namespace Sitecore.RestApi.Models
     public class PropertyArgs
     {
         public object Source { get; set; }
-        public PropertyInfo Property { get; set; }
+        public string Name { get; set; }
+        public PropertyInfo Info { get; set; }
+
+        public object GetValue()
+        {
+            return Info.GetValue(Source);
+        }
     }
 }

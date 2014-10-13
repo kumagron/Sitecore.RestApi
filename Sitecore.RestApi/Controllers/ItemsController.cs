@@ -61,11 +61,11 @@ namespace Sitecore.RestApi.Controllers
             }
 
             //TODO: Make this configurable in Sitecore
-            response.Headers.CacheControl = new CacheControlHeaderValue
-            {
-                SharedMaxAge = new TimeSpan(1, 0, 0),
-                Public = true
-            };
+            //response.Headers.CacheControl = new CacheControlHeaderValue
+            //{
+            //    SharedMaxAge = new TimeSpan(1, 0, 0),
+            //    Public = true
+            //};
 
             return response;
         }

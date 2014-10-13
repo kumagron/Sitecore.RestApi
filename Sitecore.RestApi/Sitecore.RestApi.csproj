@@ -85,7 +85,6 @@
     <Compile Include="Models\FormatterArgs.cs" />
     <Compile Include="Converters\ItemConverter.cs" />
     <Compile Include="Controllers\ItemsController.cs" />
-    <Compile Include="Formatters\BooleanFormatter.cs" />
     <Compile Include="Formatters\DateFieldFormatter.cs" />
     <Compile Include="Formatters\IFieldValueFormatter.cs" />
     <Compile Include="Formatters\IValueFomatter.cs" />

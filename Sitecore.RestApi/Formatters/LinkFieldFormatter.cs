@@ -8,14 +8,15 @@ using Newtonsoft.Json.Linq;
 using Sitecore.Data.Items;
 using Sitecore.Data.Fields;
 using Sitecore.Links;
+using Sitecore.RestApi.Models;
 
 namespace Sitecore.RestApi.Formatters
 {
     public class LinkFieldFormatter : Formatter, IFieldValueFormatter
     {
-        public void FormatValue(object source, PropertyInfo property)
+        public void FormatValue(PropertyArgs propertyArgs)
         {
-            var linkField = new LinkField(source as Field);
+            var linkField = new LinkField(propertyArgs.Source as Field);
 
             if (string.IsNullOrEmpty(linkField.Url) && linkField.TargetID.IsNull) return;
 

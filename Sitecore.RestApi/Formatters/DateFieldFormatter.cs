@@ -1,18 +1,19 @@
 ﻿using System.Reflection;
 using Sitecore.Data.Fields;
+using Sitecore.RestApi.Models;
 
 namespace Sitecore.RestApi.Formatters
 {
     public class DateFieldFormatter : Formatter, IFieldValueFormatter
     {
-        public void FormatValue(object source, PropertyInfo property)
+        public void FormatValue(PropertyArgs propertyArgs)
         {
             var regEx = new System.Text.RegularExpressions.Regex("[0-9][0-9][0-9][0-9][0-1][0-9][0-9][0-9]T[0-2][0-3][0-5][0-9][0-5][0-9]");
-            var value = property.GetValue(source).ToString();
+            var value = propertyArgs.GetValue().ToString();
 
             if (!regEx.IsMatch(value)) return;
 
-            Set(new DateField(source as Field).DateTime);
+            Set(new DateField(propertyArgs.Source as Field).DateTime);
         }
     }
 }

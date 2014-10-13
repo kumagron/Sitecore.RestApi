@@ -113,7 +113,7 @@ namespace Sitecore.RestApi.Helpers
             Func<FormatterArgs, object> formatValue = formatter =>
             {
                 var source = Activator.CreateInstance(formatter.Source.GetType()) as Formatter;
-                formatter.Method.Invoke(source, new[] {propertyArgs.Source, propertyArgs.Info});
+                formatter.Method.Invoke(source, new object[] {propertyArgs});
 
                 return source.IsFormatted ? source.FormattedObject : null;
             };
@@ -128,19 +128,14 @@ namespace Sitecore.RestApi.Helpers
         public static IEnumerable<FormatterArgs> GetFormatters(IEnumerable<Item> valueFormatterItems)
         {
             var valueFormaters = valueFormatterItems.Select(n => Type.GetType(n["Type"])).Where(n => n != null);
-
-            var formatValueParams = typeof(IValueFormatter).GetMethod("FormatValue").GetParameters();
-
+            Func<ParameterInfo, bool> isPropertyArgs = info => typeof(PropertyArgs).IsAssignableFrom(info.ParameterType);
+            
             var query = valueFormaters.Select(n =>
             {
                 var obj = Activator.CreateInstance(n);
                 var method =
                     n.GetMethods()
-                     .SingleOrDefault(
-                         m =>
-                         m.Name.Equals("FormatValue",
-                                       StringComparison.OrdinalIgnoreCase) ||
-                         formatValueParams.Equals(m.GetParameters()));
+                     .SingleOrDefault(m => m.GetParameters().SingleOrDefault(isPropertyArgs) != null);
 
                 if (method == null) return null;
 

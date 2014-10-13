@@ -4,14 +4,15 @@ using System.Linq;
 using System.Web;
 using Sitecore.Data;
 using Sitecore.Data.Items;
+using Sitecore.RestApi.Models;
 
 namespace Sitecore.RestApi.Formatters.Property
 {
     public class IdFormatter: Formatter, IPropertyFormatter
     {
-        public void Format(Item source, object value)
+        public void FormatProperty(PropertyArgs propertyArgs)
         {
-            var id = value as ID;
+            var id = propertyArgs.GetValue() as ID;
 
             if (id.IsNull) return;
  

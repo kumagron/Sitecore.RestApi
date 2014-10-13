@@ -10,7 +10,7 @@ namespace Sitecore.RestApi.Formatters.Property
 {
     public class IdFormatter: Formatter, IPropertyFormatter
     {
-        public void FormatProperty(PropertyArgs propertyArgs)
+        public void Format(PropertyArgs propertyArgs)
         {
             var id = propertyArgs.GetValue() as ID;
 

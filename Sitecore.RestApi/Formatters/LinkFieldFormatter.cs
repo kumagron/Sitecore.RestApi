@@ -14,7 +14,7 @@ namespace Sitecore.RestApi.Formatters
 {
     public class LinkFieldFormatter : Formatter, IFieldValueFormatter
     {
-        public void FormatValue(PropertyArgs propertyArgs)
+        public void Format(PropertyArgs propertyArgs)
         {
             var linkField = new LinkField(propertyArgs.Source as Field);
 

@@ -10,6 +10,6 @@ namespace Sitecore.RestApi.Formatters
 {
     public interface IPropertyFormatter
     {
-        void FormatProperty(PropertyArgs propertyArgs);
+        void Format(PropertyArgs propertyArgs);
     }
 }

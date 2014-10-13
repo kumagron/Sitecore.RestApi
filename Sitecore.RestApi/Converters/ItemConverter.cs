@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Sitecore.RestApi.Formatters;
+using Sitecore.RestApi.Formatters.Property;
 using Sitecore.RestApi.Helpers;
 using Sitecore.RestApi.Models;
 using Newtonsoft.Json.Linq;
@@ -17,10 +18,36 @@ namespace Sitecore.RestApi.Converters
         public ItemConverter(ItemProfile itemProfile)
         {
             ItemProfile = itemProfile;
-            ItemProfile.ItemPropertyFormatters = new Dictionary<string, Func<Item, object>>
-                                         {
-                                             {"fields", ConvertItemFields}
-                                         };
+
+            var methodInfo = typeof (IPropertyFormatter).GetMethods().SingleOrDefault(n => n.Name.Equals("Format"));
+
+            ItemProfile.PropertyFormatters = new Dictionary<string, FormatterArgs>
+                                                 {
+                                                     {
+                                                         "id",
+                                                         new FormatterArgs
+                                                             {
+                                                                 Type = typeof(IdFormatter),
+                                                                 Method = methodInfo
+                                                             }
+                                                     },
+                                                     {
+                                                         "fields",
+                                                         new FormatterArgs
+                                                             {
+                                                                 Type = typeof(FieldsFormatter),
+                                                                 Method = methodInfo
+                                                             }
+                                                     },
+                                                     {
+                                                         "foo",
+                                                         new FormatterArgs
+                                                             {
+                                                                 Type = typeof(FooFormatter),
+                                                                 Method = methodInfo
+                                                             }
+                                                     }
+                                                 };
 
             if (ItemProfile.ShowFields && ItemProfile.FieldPropertyNames.Any())
                 ItemProfile.ItemPropertyNames.Add("Fields");
@@ -47,22 +74,6 @@ namespace Sitecore.RestApi.Converters
             var item = FormatHelper.GenerateJTokenAsync(source, ItemProfile);
 
             return item.Result;
-        }
-
-        public JToken ConvertItemFields(Item item)
-        {
-            Func<string, bool> nameIsHidden = 
-                s => ItemProfile.HiddenFieldNames.Any(n => s.IndexOf(n, StringComparison.OrdinalIgnoreCase) != -1);
-
-            var query = from obj in item.Fields
-                        where !nameIsHidden(obj.Name)
-                        select obj;
-
-            var tasks = query.Select(obj => Task.FromResult(FormatHelper.GenerateJTokenAsync(obj, ItemProfile))).ToArray();
-
-            Task.WaitAll(tasks);
-
-            return JArray.FromObject(tasks.Select(n => n.Result.Result).Where(n => n.HasValues));
         }
     }
 }

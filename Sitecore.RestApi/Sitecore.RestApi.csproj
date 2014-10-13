@@ -78,6 +78,7 @@
     <Compile Include="Formatters\IPropertyFormatter.cs" />
     <Compile Include="Formatters\Formatter.cs" />
     <Compile Include="Formatters\Property\FieldsFormatter.cs" />
+    <Compile Include="Formatters\Property\FooFormatter.cs" />
     <Compile Include="Formatters\Property\IdFormatter.cs" />
     <Compile Include="Helpers\FormatHelper.cs" />
     <Compile Include="Helpers\SettingsHelper.cs" />
@@ -88,7 +89,6 @@
     <Compile Include="Formatters\DateFieldFormatter.cs" />
     <Compile Include="Formatters\IFieldValueFormatter.cs" />
     <Compile Include="Formatters\IValueFomatter.cs" />
-    <Compile Include="Converters\ItemPropertyConverter.cs" />
     <Compile Include="Models\ItemQuery.cs" />
     <Compile Include="Models\ItemQueryRepository.cs" />
     <Compile Include="Models\ItemRepository.cs" />

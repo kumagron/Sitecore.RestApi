@@ -46,7 +46,7 @@ namespace Sitecore.RestApi.Models
                                         HiddenFieldNames = hiddenFields.GetItems().Select(n => n["Name"]).ToList(),
                                         ShowFields = showFields.Checked,
                                         CamelCaseName = forceCamelCase.Checked,
-                                        ValueFormatters = FormatHelper.GetValueFormatters(valueFormatters.GetItems()).ToList()
+                                        ValueFormatters = FormatHelper.GetFormatters(valueFormatters.GetItems()).ToList()
                                     };
 
             return itemProfile;

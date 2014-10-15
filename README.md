@@ -61,8 +61,9 @@ http://localhost/api/items/[GUID]/descendants
 By default the REST API will return JSON but you can also force it to return an xml by setting the header content-type to either application/xml or text/xml. 
 
 ##Upcoming Features
-* Token Authentication
+* Token based authentication
 * Item property formatting
+* Caching and eTagging
 * Lucene search
 
 ##How to install

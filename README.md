@@ -38,7 +38,7 @@ And of course your query should look like this:
 ```
 fast:/sitecore/content//*[@@templatekey={templatekey}]
 ```
-##Additional Features
+###Additional Querying Features
 
 
 Getting a single item using the item's ID:

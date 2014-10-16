@@ -69,20 +69,22 @@ By default the REST API will return JSON but you can also force it to return an 
 ##How to install
 Although this project is already fully functional an installer is still on its way and to compensate for that I've included the serialized templates and items that you can already use.
 
-After deserialization build the project and copy the Sitecore.RestApi.dll and Newtonsoft.Json.dll files to your site's bin folder, and Sitecore.RestApi.config file to your site's Include folder.
+After deserialization build the project and copy all the DLLs to your site's bin folder, and Sitecore.RestApi.config to your site's Include folder.
 
-You can also create a Local.targets file alongside the project file to copy these files after build and it will be imported automatically to your build targets.
+You can also create a Local.targets file alongside the project file and it will be imported automatically to your build targets.
 ```
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <BinFiles Include=".\bin\*.dll"/>
+    <ConfigFiles Include=".\App_Config\Include\*.config"/>
+    </ItemGroup>
   <PropertyGroup>
-    <LocalSiteRoot>[Full path to your site]</LocalSiteRoot>
+    <LocalSiteRoot>[Full path to your Website folder]</LocalSiteRoot>
   </PropertyGroup>
   <Target Name="AfterBuild">
-    <Copy SourceFiles="bin\Sitecore.RestApi.dll" DestinationFolder="$(LocalSiteRoot)\bin" ContinueOnError="false" />
-    <Copy SourceFiles="bin\Newtonsoft.Json.dll" DestinationFolder="$(LocalSiteRoot)\bin" ContinueOnError="false" />
-    <Copy SourceFiles="App_Config\Include\Sitecore.RestApi.config" DestinationFolder="$(LocalSiteRoot)\App_Config\Include" ContinueOnError="false" />
-  </Target>
+    <Copy SourceFiles="@(BinFiles)" DestinationFolder="$(LocalSiteRoot)\bin" ContinueOnError="false" />
+    <Copy SourceFiles="@(ConfigFiles)" DestinationFolder="$(LocalSiteRoot)\App_Config\Include" ContinueOnError="false" /> </Target>
 </Project>
 ```
 Be aware that I've used the latest Sitecore build for this project (7.2 build 140526) and I haven't tested it on earlier versions.
